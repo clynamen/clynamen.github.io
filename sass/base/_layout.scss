@@ -121,9 +121,17 @@ body.sidebar-footer {
   .toggle-sidebar { display: none; }
 }
 
+body > header .header-title a {
+  color: #222;
+  font-size: 40px;
+  font-weight: 200;
+  line-height: 45px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
 
 #main-banner-placeholder {
-  height: 200px;
+  height: 180px;
 }
 
 #main-banner {
@@ -133,6 +141,22 @@ body.sidebar-footer {
   position: fixed;
   width: 650px;
   z-index: 1;
+  font-family: "Araypay";
+  font-style: normal;
+  font-weight: 400;
+}
+
+#social-bar-twitter:hover {
+    background: url("/assets/images/twitter-hover.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+}
+
+#social-bar-twitter {
+    background: url("/assets/images/twitter.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+    display: block;
+    height: 100px;
+    position: absolute;
+    left: 100px;
+    width: 100px;
 }
 
 @media only screen and (min-width: 550px) {
