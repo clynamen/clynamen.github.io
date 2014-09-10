@@ -1,0 +1,3 @@
+[submodule ".themes/wired_next"]
+	path = .themes/wired_next
+	url = git@github.com:clynamen/wired_next.git
