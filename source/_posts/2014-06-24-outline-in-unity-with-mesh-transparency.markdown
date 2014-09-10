@@ -1,0 +1,201 @@
+---
+layout: post
+title: "Outline in Unity with mesh transparency"
+date: 2014-06-24 02:50:30 +0200
+comments: true
+categories: unity game development shader transparency 
+---
+
+- - -
+This post was originally published on [my previous blog](http://nihilistdev.blogspot.it/2013/05/outline-in-unity-with-mesh-transparency.html)
+- - -
+
+
+Here I found a shader for Unity to obtain an outline of a mesh.
+
+http://answers.unity3d.com/questions/141229/making-a-silhouette-outline-shader.html
+
+
+This shader uses a pass to create a slightly bigger mesh behind the original one.
+This is a good solution (at least in Unity), but only for convex/non transparent object. The fragments of the outline will indeed appear behind the mesh: 
+
+![transparency-shader](http://3.bp.blogspot.com/-U_85pnhDsoo/UaFLismy3PI/AAAAAAAAAMU/sp3YP3sF3Ow/s320/11190-untitled.jpg)
+
+**We can remove the fragments behind the mesh** modifying the depth buffer with a duplicated object.
+The original object writes to the z-buffer, so the duplicated object (i.e. the one that act as an outline) will be partially culled by the original one.
+
+In order to obtain this, we can use these shaders:
+
+**Transparent shader** for the original object
+
+```c++
+Shader "Outline/Transparent" {
+  Properties {
+    _color ("Color", Color) = (1,1,1,0.5)
+  }
+ 
+    SubShader {
+    Tags {"Queue" = "Geometry+1" }
+      Pass {
+        Blend SrcAlpha OneMinusSrcAlpha
+        Lighting On
+        ZWrite On
+ 
+        Material {
+          Diffuse [_color]
+        }
+      }
+    }
+}
+```
+
+**Outline shader for the outline**, it will be applied to the duplicated object (Note: this is a mod of the shader quoted at the begin) 
+
+```c++
+Shader "Outline/Outline" {
+    Properties {
+      _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+      _Outline ("Outline width", Range (.002, 0.03)) = .005
+    }
+ 
+    CGINCLUDE
+    #include "UnityCG.cginc"
+ 
+    struct appdata {
+    float4 vertex : POSITION;
+    float3 normal : NORMAL;
+    };
+ 
+    struct v2f {
+    float4 pos : POSITION;
+    float4 color : COLOR;
+    };
+ 
+    uniform float _Outline;
+    uniform float4 _OutlineColor;
+ 
+    v2f vert(appdata v) {
+      // just make a copy of incoming vertex data but scaled according to normal direction
+      v2f o;
+      o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+ 
+      float3 norm = mul ((float3x3)UNITY_MATRIX_IT_MV, v.normal);
+      float2 offset = TransformViewToProjection(norm.xy);
+ 
+      o.pos.xy += offset * o.pos.z * _Outline;
+      o.color = _OutlineColor;
+      return o;
+    }
+    ENDCG
+ 
+    SubShader {
+    Tags {"Queue" = "Overlay"}
+ 
+      Pass {
+        Name "OUTLINE"
+        Tags { "LightMode" = "Always" }
+        Cull Front
+        ZWrite On
+        ZTest Less
+        Blend SrcAlpha OneMinusSrcAlpha
+        ColorMask RGB
+        Offset 15,15
+ 
+        CGPROGRAM
+        #pragma vertex vert
+        #pragma fragment frag
+          half4 frag(v2f i) :COLOR { return i.color; }
+        ENDCG
+      }
+    }
+ 
+    SubShader {
+      Tags {"Queue" = "Overlay" }
+      CGPROGRAM
+      #pragma surface surf Lambert
+ 
+      sampler2D _MainTex;
+      fixed4 _Color;
+ 
+      struct Input {
+        float2 uv_MainTex;
+      };
+ 
+      void surf (Input IN, inout SurfaceOutput o) {
+        fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
+        o.Albedo = c.rgb;
+        o.Alpha = c.a;
+      }
+      ENDCG
+ 
+      Pass {
+        Name "OUTLINE"
+        Tags { "LightMode" = "Always" }
+        Cull Front
+        ZWrite On
+        ColorMask RGB
+        Blend SrcAlpha OneMinusSrcAlpha
+ 
+        CGPROGRAM
+        #pragma vertex vert
+        #pragma exclude_renderers gles xbox360 ps3
+        ENDCG
+        SetTexture [_MainTex] { combine primary }
+      }
+    }
+ 
+    Fallback "Diffuse"
+}
+```
+
+The result is pretty good:
+
+![shader](http://3.bp.blogspot.com/-eMUVWnQnrQY/UaFLk6o7m7I/AAAAAAAAAMc/J9_xlm1-NFY/s320/Untitled.png)
+
+
+Finally, here it is a Unity script that automatically creates the outline effect when applied to an object:
+
+```c++
+using UnityEngine;
+using System.Collections;
+ 
+public class Outliner : MonoBehaviour {
+ 
+  public Color meshColor = new Color(1f,1f,1f,0.5f);
+  public Color outlineColor = new Color(1f,1f,0f,1f);
+ 
+  // Use this for initialization
+  public void Start () {
+ 
+    // Set the transparent material to this object
+    MeshRenderer meshRenderer = GetComponent<meshrenderer>();
+    Material[] materials = meshRenderer.materials;
+    int materialsNum = materials.Length;
+    for(int i = 0; i < materialsNum; i++) {
+      materials[i].shader = Shader.Find("Outline/Transparent");
+      materials[i].SetColor("_color", meshColor);
+    }
+ 
+    // Create copy of this object, this will have the shader that makes the real outline
+    GameObject outlineObj = new GameObject();
+    outlineObj.transform.position = transform.position;
+    outlineObj.transform.rotation = transform.rotation;
+    outlineObj.AddComponent<meshfilter>();
+    outlineObj.AddComponent<meshrenderer>();
+    Mesh mesh;
+    mesh = (Mesh) Instantiate(GetComponent<meshfilter>().mesh);
+    outlineObj.GetComponent<meshfilter>().mesh = mesh;
+ 
+    outlineObj.transform.parent = this.transform;
+    materials = new Material[materialsNum];
+    for(int i = 0; i < materialsNum; i++) {
+      materials[i] = new Material(Shader.Find("Outline/Outline"));
+      materials[i].SetColor("_OutlineColor", outlineColor);
+    }
+    outlineObj.GetComponent<meshrenderer>().materials = materials;
+ 
+  }
+ 
+}
+```
+
