@@ -27,3 +27,5 @@ Along with many engineers from my university I currently work on the SLAM system
 ![the team DIANA's rover](/images/rover.png)
 
 I usually write code in C++ and python. Lately however I spend more time with functional languages like scala and haskell.  
+
+[resumé](/extras/resume.pdf)
