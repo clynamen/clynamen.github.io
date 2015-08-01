@@ -20,7 +20,10 @@ var yearsApart=milli/milliPerYear;
 
 document.write(Math.floor(yearsApart)); 
 
-</script> years old student of Computer Engineering at Polytechnic University of Turin.</div>
+</script> years old student of Mechatronic Engineering at Polytechnic University of Turin, where I received a bachelor degree in Computer Engineering in 2015</div>
+My main interests are related to robotics and computer science. I started programming in C++ and C# during high school, developing simple desktop apps (using Qt) and joining a [game development team](http://steamcommunity.com/sharedfiles/filedetails/?id=93007501) (which I later left in order to start my first job). After some experience in server development (Java, C# and python) I am now focused in Computer Vision and Machine Learning. 
+Along with many engineers from my university I currently work on the SLAM system of an engineering model of a rover built by [team DIANA](http://www.teamdiana.org/).
 
-I usually write code in Java and C#, both for fun and at work as a server developer. Lately however I spend more time with functional languages, especially scala. 
-I also love C++ and other languages with powerful metaprogramming support.
+![the team DIANA's rover](rover.png)
+
+I usually write code in C++ and python. Lately however I spend more time with functional languages like scala and haskell.  
