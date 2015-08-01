@@ -147,15 +147,44 @@ body > header .header-title a {
 }
 
 #social-bar-twitter:hover {
-    background: url("/assets/images/twitter-hover.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+    background: url("/images/social.png") no-repeat scroll 0px -69px rgba(0, 0, 0, 0);
 }
 
 #social-bar-twitter {
-    background: url("/assets/images/twitter.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+    background: url("/images/social.png") no-repeat scroll 0px 0px rgba(0, 0, 0, 0);
     display: block;
-    height: 100px;
+    max-width: 89px;
+    height: 68px;
     position: absolute;
     left: 100px;
+    width: 100px;
+}
+
+#social-bar-github:hover {
+    background: url("/images/social.png") no-repeat scroll -90px -69px rgba(0, 0, 0, 0);
+}
+
+#social-bar-github {
+    background: url("/images/social.png") no-repeat scroll -90px 0px rgba(0, 0, 0, 0);
+    display: block;
+    max-width: 82px;
+    height: 75px;
+    position: absolute;
+    left: 210px;
+    width: 100px;
+}
+
+#social-bar-resume:hover {
+    background: url("/images/social.png") no-repeat scroll -180px -69px rgba(0, 0, 0, 0);
+}
+
+#social-bar-resume {
+    background: url("/images/social.png") no-repeat scroll -180px 0px rgba(0, 0, 0, 0);
+    display: block;
+    max-width: 82;
+    height: 68px;
+    position: absolute;
+    left: 510px;
     width: 100px;
 }
 

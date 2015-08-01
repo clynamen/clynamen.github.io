@@ -78,12 +78,4 @@ http://lemasabachthani.wordpress.com/
 
 http://azizonomics.com/
 
-## Misc
-http://ilnichilista.com/
-
-http://www.ilpost.it/makkox/
-
-http://www.zerocalcare.it/ 
-
-
 

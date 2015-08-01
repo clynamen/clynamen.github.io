@@ -24,6 +24,6 @@ document.write(Math.floor(yearsApart));
 My main interests are related to robotics and computer science. I started programming in C++ and C# during high school, developing simple desktop apps (using Qt) and joining a [game development team](http://steamcommunity.com/sharedfiles/filedetails/?id=93007501) (which I later left in order to start my first job). After some experience in server development (Java, C# and python) I am now focused in Computer Vision and Machine Learning. 
 Along with many engineers from my university I currently work on the SLAM system of an engineering model of a rover built by [team DIANA](http://www.teamdiana.org/).
 
-![the team DIANA's rover](rover.png)
+![the team DIANA's rover](/images/rover.png)
 
 I usually write code in C++ and python. Lately however I spend more time with functional languages like scala and haskell.  
