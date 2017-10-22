@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17"
+title: "Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [EN]"
 date: 2017-10-15 00:00:00 +0200
 comments: true
 categories: [autonomous, driving, vehicle, comma.ai, computer vision, lidars]
