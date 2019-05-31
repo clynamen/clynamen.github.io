@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Julia and the current status of OpenCV bindings - The Infornographer</title>
+  <meta name="author" content="Vincenzo Giovanni Comito">
+
+  
+  <meta name="description" content="Recently the Julia Cxx.jl package came back to life again. The package uses Clang for calling C++ at runtime, possibly making it the most interesting &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://clynamen.github.io/blog/2019/05/31/julia_opencv">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Infornographer" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <script src="/javascripts/banner-scroll.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Fjalla+One' rel='stylesheet' type='text/css'>
+  
+
+</head>
+
+<body   class="collapse-sidebar sidebar-footer" >
+  <header id="main-banner" role="banner">
+	<div class="header-title"><a href="/">The Infornographer</a></div>
+
+
+</header>
+  <div id="main-banner-placeholder"></div>
+  <div id="social-bar" style="height: 66px;">
+    <a href="https://twitter.com/cIynamen" target="_blank" id="social-bar-twitter"></a>
+    <a href="https://github.com/clynamen/" target="_blank" id="social-bar-github"></a>
+    <a href="/extras/resume.pdf" target="_blank" id="social-bar-resume" title='resume'></a>
+  </div>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:clynamen.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+  
+    
+      <h1 class="entry-title">Julia and the Current Status of OpenCV Bindings</h1>
+    
+  
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2019-05-31T01:00:00+02:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><strong>Recently the Julia <a href="https://github.com/JuliaInterop/Cxx.jl">Cxx.jl package</a> came back to life again.</strong> The package uses Clang for calling C++ at runtime, possibly making it the most interesting tool for interfacing with a lot of C++ libraries.
+Since Julia seems really promising for writing Computer Vision algorithms, both for support for Machine Learning and linear algebra in general with high performance, I wanted to try the OpenCV bindings.
+The idea seemed appealing to quite some people since there are three attempts in this application, that not surprisingly share the same name:</p>
+
+<ul>
+<li><a href="https://github.com/JuliaOpenCV/OpenCV.jl">OpenCV.jl</a></li>
+<li><a href="https://github.com/maxruby/OpenCV.jl">OpenCV.jl</a></li>
+<li>..and&hellip; <a href="https://github.com/TakekazuKATO/OpenCV.jl">OpenCV.jl</a></li>
+</ul>
+
+
+<p>A bit sadly, all three projects seem abandoned now. I am not surprised since both Julia and OpenCV were undergoing many changes in the latest years. Even if bindings are a thin layer of intermixed language code, it is quite a burden to maintain them, especially during the initial phase where no one has a real interest in them.</p>
+
+<p><strong>The OpenCV project itself provides two main bindings, for python and java.</strong> I have never used the java binding, but I can assure you the python binding is damn good. Since all the hard work is done by the OpenCV library itself and, elsewhere, by numpy, it is possible to quickly use the complex algorithm offered by OpenCV with C++ performance. These bindings are two extra modules built along with the full source, so they are provided in almost all distributions.
+Most importantly, being included in the same repo, these bindings are maintained by the same OpenCV developers.</p>
+
+<p>The generation of bindings for other languages, however, is left as an exercise to the reader.</p>
+
+<p>As explained in the <a href="https://docs.opencv.org/3.4/da/d49/tutorial_py_bindings_basics.html">official documentation</a> the generation of java and python binding is a quick and dirty process: A python script parses the headers and provides function signatures to a generator, which in turn generates the python (or java) code using template strings and some handcoded files. The process does not seem really modular, and probably today there are better options, especially for the parser (e.g. libclang). But being self-contained and targeted for opencv only, <strong>it just works</strong>.</p>
+
+<p>As for Julia, lovers of other languages created their own bindings. Just to name a few:</p>
+
+<ul>
+<li><a href="https://github.com/twistedfall/opencv-rust">opencv-rust</a></li>
+<li><a href="https://github.com/peterbraden/node-opencv">node-opencv</a></li>
+<li><a href="http://hackage.haskell.org/package/opencv">haskell - opencv</a></li>
+</ul>
+
+
+<p>Needless to say, these libraries use different implementation approaches:</p>
+
+<ul>
+<li>Writing a C library first, and then use the <a href="https://en.wikipedia.org/wiki/Foreign_function_interface">FFI</a> for C</li>
+<li>Wrap the C++ code in a library that can be imported in the desired language.</li>
+<li>Perform a C++ low-level call</li>
+</ul>
+
+
+<p>Now, all the three Julia implementation cited above seems to have taken the &lsquo;Call C++ code directly&rsquo; approach using the Cxx.jl library. After all, clang is powerful enough to do this kind of magic today. It is kind of amazing that compiled and JIT code can talk each other, almost if as if we are using languages built upon a high-level runtime (e.g. C# and VisualBasic on CLR, Java and Scala on the JVM etc&hellip;).</p>
+
+<p>So, coming back to the original problem, I would like to improve or write an OpenCV binding for Julia. Still, <strong>I am not sure which is the best approach.</strong>
+Using the Cxx.jl library, even if quite elegant and easy to read (since all the ugly stuff stays in the Cxx.jl module itself) involves writing most of the code manually. Whenever functions are added/removed/modified in OpenCV, we need to manually update our bindings.
+Of course, this happens often, but not so often to be an unmanageable burden (it is the interest of the same OpenCV developers to change the API slowly, without breaking changes).</p>
+
+<p><strong>However the parser approach used by OpenCV makes more sense</strong>: Code is generated automatically, except for a few special cases for convenience or performance reason. Only small updates should be required, new functions will be automatically supported, and maybe one day the binding can be merged in the same OpenCV library.</p>
+
+<p>It is hard to chose one of the two paths without prototyping a bit with them. I am currently evaluating the generator approach. I will write about the progress in a new post, hopefully soon.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Vincenzo Giovanni Comito</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2019-05-31T01:00:00+02:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/julia/'>julia</a>, <a class='category' href='/blog/categories/opencv/'>opencv</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://clynamen.github.io/blog/2019/05/31/julia_opencv/" data-via="cIynamen" data-counturl="http://clynamen.github.io/blog/2019/05/31/julia_opencv/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/02/04/carsim2d/" title="Previous Post: Experimente mit Rust - Carsim2d [DE]">&laquo; Experimente mit Rust - Carsim2d [DE]</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/05/31/julia_opencv/">Julia and the current status of OpenCV bindings</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/02/04/carsim2d/">Experimente mit Rust - Carsim2d [DE]</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/10/15/sdc-weekly_de/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [EN]</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/10/15/sdc-weekly/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE]</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/outline-in-unity-with-mesh-transparency/">Outline in Unity with mesh transparency</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section id="twitter">
+  <h1 class="tweets">Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("cIynamen", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/cIynamen">@cIynamen</a></p>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/clynamen">@clynamen</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'clynamen',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2019 -  Vincenzo Giovanni Comito <br/>
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a> + <a href="https://github.com/clynamen/wired_next">theme: wired_next, a mnml fork</a>.
+	  
+  </span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,620 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Outline in Unity with mesh transparency - The Infornographer</title>
+  <meta name="author" content="Vincenzo Giovanni Comito">
+
+  
+  <meta name="description" content="This post was originally published on my previous blog Here I found a shader for Unity to obtain an outline of a mesh. http://answers.unity3d.com/ &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://clynamen.github.io/blog/2014/06/24/outline-in-unity-with-mesh-transparency">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Infornographer" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <script src="/javascripts/banner-scroll.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Fjalla+One' rel='stylesheet' type='text/css'>
+  
+
+</head>
+
+<body   class="collapse-sidebar sidebar-footer" >
+  <header id="main-banner" role="banner">
+	<div class="header-title"><a href="/">The Infornographer</a></div>
+
+
+</header>
+  <div id="main-banner-placeholder"></div>
+  <div id="social-bar" style="height: 66px;">
+    <a href="https://twitter.com/cIynamen" target="_blank" id="social-bar-twitter"></a>
+    <a href="https://github.com/clynamen/" target="_blank" id="social-bar-github"></a>
+    <a href="/extras/resume.pdf" target="_blank" id="social-bar-resume" title='resume'></a>
+  </div>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:clynamen.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+  
+    
+      <h1 class="entry-title">Outline in Unity With Mesh Transparency</h1>
+    
+  
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-24T02:50:30+02:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><hr />
+
+<p>This post was originally published on <a href="http://nihilistdev.blogspot.it/2013/05/outline-in-unity-with-mesh-transparency.html">my previous blog</a></p>
+
+<hr />
+
+<p>Here I found a shader for Unity to obtain an outline of a mesh.</p>
+
+<p><a href="http://answers.unity3d.com/questions/141229/making-a-silhouette-outline-shader.html">http://answers.unity3d.com/questions/141229/making-a-silhouette-outline-shader.html</a></p>
+
+<p>This shader uses a pass to create a slightly bigger mesh behind the original one.
+This is a good solution (at least in Unity), but only for convex/non transparent object. The fragments of the outline will indeed appear behind the mesh:</p>
+
+<p><img src="http://3.bp.blogspot.com/-U_85pnhDsoo/UaFLismy3PI/AAAAAAAAAMU/sp3YP3sF3Ow/s320/11190-untitled.jpg" alt="transparency-shader" /></p>
+
+<p><strong>We can remove the fragments behind the mesh</strong> modifying the depth buffer with a duplicated object.
+The original object writes to the z-buffer, so the duplicated object (i.e. the one that act as an outline) will be partially culled by the original one.</p>
+
+<p>In order to obtain this, we can use these shaders:</p>
+
+<p><strong>Transparent shader</strong> for the original object</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="n">Shader</span> <span class="s">&quot;Outline/Transparent&quot;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">Properties</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">_color</span> <span class="p">(</span><span class="s">&quot;Color&quot;</span><span class="p">,</span> <span class="n">Color</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SubShader</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">Tags</span> <span class="p">{</span><span class="s">&quot;Queue&quot;</span> <span class="o">=</span> <span class="s">&quot;Geometry+1&quot;</span> <span class="p">}</span>
+</span><span class='line'>      <span class="n">Pass</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">Blend</span> <span class="n">SrcAlpha</span> <span class="n">OneMinusSrcAlpha</span>
+</span><span class='line'>        <span class="n">Lighting</span> <span class="n">On</span>
+</span><span class='line'>        <span class="n">ZWrite</span> <span class="n">On</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Material</span> <span class="p">{</span>
+</span><span class='line'>          <span class="n">Diffuse</span> <span class="p">[</span><span class="n">_color</span><span class="p">]</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Outline shader for the outline</strong>, it will be applied to the duplicated object (Note: this is a mod of the shader quoted at the begin)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="n">Shader</span> <span class="s">&quot;Outline/Outline&quot;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">Properties</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">_OutlineColor</span> <span class="p">(</span><span class="s">&quot;Outline Color&quot;</span><span class="p">,</span> <span class="n">Color</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">_Outline</span> <span class="p">(</span><span class="s">&quot;Outline width&quot;</span><span class="p">,</span> <span class="n">Range</span> <span class="p">(</span><span class="mf">.002</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">))</span> <span class="o">=</span> <span class="mf">.005</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">CGINCLUDE</span>
+</span><span class='line'>    <span class="cp">#include &quot;UnityCG.cginc&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">appdata</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">float4</span> <span class="nl">vertex</span> <span class="p">:</span> <span class="n">POSITION</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">float3</span> <span class="nl">normal</span> <span class="p">:</span> <span class="n">NORMAL</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">struct</span> <span class="n">v2f</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">float4</span> <span class="nl">pos</span> <span class="p">:</span> <span class="n">POSITION</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">float4</span> <span class="nl">color</span> <span class="p">:</span> <span class="n">COLOR</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">uniform</span> <span class="kt">float</span> <span class="n">_Outline</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">uniform</span> <span class="n">float4</span> <span class="n">_OutlineColor</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">v2f</span> <span class="nf">vert</span><span class="p">(</span><span class="n">appdata</span> <span class="n">v</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// just make a copy of incoming vertex data but scaled according to normal direction</span>
+</span><span class='line'>      <span class="n">v2f</span> <span class="n">o</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">o</span><span class="p">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">mul</span><span class="p">(</span><span class="n">UNITY_MATRIX_MVP</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">vertex</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">float3</span> <span class="n">norm</span> <span class="o">=</span> <span class="n">mul</span> <span class="p">((</span><span class="n">float3x3</span><span class="p">)</span><span class="n">UNITY_MATRIX_IT_MV</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">float2</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">TransformViewToProjection</span><span class="p">(</span><span class="n">norm</span><span class="p">.</span><span class="n">xy</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">o</span><span class="p">.</span><span class="n">pos</span><span class="p">.</span><span class="n">xy</span> <span class="o">+=</span> <span class="n">offset</span> <span class="o">*</span> <span class="n">o</span><span class="p">.</span><span class="n">pos</span><span class="p">.</span><span class="n">z</span> <span class="o">*</span> <span class="n">_Outline</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">o</span><span class="p">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">_OutlineColor</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">ENDCG</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SubShader</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">Tags</span> <span class="p">{</span><span class="s">&quot;Queue&quot;</span> <span class="o">=</span> <span class="s">&quot;Overlay&quot;</span><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">Pass</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">Name</span> <span class="s">&quot;OUTLINE&quot;</span>
+</span><span class='line'>        <span class="n">Tags</span> <span class="p">{</span> <span class="s">&quot;LightMode&quot;</span> <span class="o">=</span> <span class="s">&quot;Always&quot;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="n">Cull</span> <span class="n">Front</span>
+</span><span class='line'>        <span class="n">ZWrite</span> <span class="n">On</span>
+</span><span class='line'>        <span class="n">ZTest</span> <span class="n">Less</span>
+</span><span class='line'>        <span class="n">Blend</span> <span class="n">SrcAlpha</span> <span class="n">OneMinusSrcAlpha</span>
+</span><span class='line'>        <span class="n">ColorMask</span> <span class="n">RGB</span>
+</span><span class='line'>        <span class="n">Offset</span> <span class="mi">15</span><span class="p">,</span><span class="mi">15</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">CGPROGRAM</span>
+</span><span class='line'>        <span class="cp">#pragma vertex vert</span>
+</span><span class='line'>        <span class="cp">#pragma fragment frag</span>
+</span><span class='line'>          <span class="n">half4</span> <span class="n">frag</span><span class="p">(</span><span class="n">v2f</span> <span class="n">i</span><span class="p">)</span> <span class="o">:</span><span class="n">COLOR</span> <span class="p">{</span> <span class="k">return</span> <span class="n">i</span><span class="p">.</span><span class="n">color</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="n">ENDCG</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SubShader</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">Tags</span> <span class="p">{</span><span class="s">&quot;Queue&quot;</span> <span class="o">=</span> <span class="s">&quot;Overlay&quot;</span> <span class="p">}</span>
+</span><span class='line'>      <span class="n">CGPROGRAM</span>
+</span><span class='line'>      <span class="cp">#pragma surface surf Lambert</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">sampler2D</span> <span class="n">_MainTex</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">fixed4</span> <span class="n">_Color</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">struct</span> <span class="n">Input</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">float2</span> <span class="n">uv_MainTex</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kt">void</span> <span class="nf">surf</span> <span class="p">(</span><span class="n">Input</span> <span class="n">IN</span><span class="p">,</span> <span class="n">inout</span> <span class="n">SurfaceOutput</span> <span class="n">o</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">fixed4</span> <span class="n">c</span> <span class="o">=</span> <span class="n">tex2D</span><span class="p">(</span><span class="n">_MainTex</span><span class="p">,</span> <span class="n">IN</span><span class="p">.</span><span class="n">uv_MainTex</span><span class="p">)</span> <span class="o">*</span> <span class="n">_Color</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">o</span><span class="p">.</span><span class="n">Albedo</span> <span class="o">=</span> <span class="n">c</span><span class="p">.</span><span class="n">rgb</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">o</span><span class="p">.</span><span class="n">Alpha</span> <span class="o">=</span> <span class="n">c</span><span class="p">.</span><span class="n">a</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>      <span class="n">ENDCG</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">Pass</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">Name</span> <span class="s">&quot;OUTLINE&quot;</span>
+</span><span class='line'>        <span class="n">Tags</span> <span class="p">{</span> <span class="s">&quot;LightMode&quot;</span> <span class="o">=</span> <span class="s">&quot;Always&quot;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="n">Cull</span> <span class="n">Front</span>
+</span><span class='line'>        <span class="n">ZWrite</span> <span class="n">On</span>
+</span><span class='line'>        <span class="n">ColorMask</span> <span class="n">RGB</span>
+</span><span class='line'>        <span class="n">Blend</span> <span class="n">SrcAlpha</span> <span class="n">OneMinusSrcAlpha</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">CGPROGRAM</span>
+</span><span class='line'>        <span class="cp">#pragma vertex vert</span>
+</span><span class='line'>        <span class="cp">#pragma exclude_renderers gles xbox360 ps3</span>
+</span><span class='line'>        <span class="n">ENDCG</span>
+</span><span class='line'>        <span class="n">SetTexture</span> <span class="p">[</span><span class="n">_MainTex</span><span class="p">]</span> <span class="p">{</span> <span class="n">combine</span> <span class="n">primary</span> <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Fallback</span> <span class="s">&quot;Diffuse&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The result is pretty good:</p>
+
+<p><img src="http://3.bp.blogspot.com/-eMUVWnQnrQY/UaFLk6o7m7I/AAAAAAAAAMc/J9_xlm1-NFY/s320/Untitled.png" alt="shader" /></p>
+
+<p>Finally, here it is a Unity script that automatically creates the outline effect when applied to an object:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='c++'><span class='line'><span class="k">using</span> <span class="n">UnityEngine</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="n">System</span><span class="p">.</span><span class="n">Collections</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Outliner</span> <span class="o">:</span> <span class="n">MonoBehaviour</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="n">Color</span> <span class="n">meshColor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Color</span><span class="p">(</span><span class="mf">1f</span><span class="p">,</span><span class="mf">1f</span><span class="p">,</span><span class="mf">1f</span><span class="p">,</span><span class="mf">0.5f</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">public</span> <span class="n">Color</span> <span class="n">outlineColor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Color</span><span class="p">(</span><span class="mf">1f</span><span class="p">,</span><span class="mf">1f</span><span class="p">,</span><span class="mf">0f</span><span class="p">,</span><span class="mf">1f</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Use this for initialization</span>
+</span><span class='line'>  <span class="k">public</span> <span class="kt">void</span> <span class="nf">Start</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Set the transparent material to this object</span>
+</span><span class='line'>    <span class="n">MeshRenderer</span> <span class="n">meshRenderer</span> <span class="o">=</span> <span class="n">GetComponent</span><span class="o">&lt;</span><span class="n">meshrenderer</span><span class="o">&gt;</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">Material</span><span class="p">[]</span> <span class="n">materials</span> <span class="o">=</span> <span class="n">meshRenderer</span><span class="p">.</span><span class="n">materials</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">materialsNum</span> <span class="o">=</span> <span class="n">materials</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">materialsNum</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">materials</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="s">&quot;Outline/Transparent&quot;</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">materials</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">SetColor</span><span class="p">(</span><span class="s">&quot;_color&quot;</span><span class="p">,</span> <span class="n">meshColor</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Create copy of this object, this will have the shader that makes the real outline</span>
+</span><span class='line'>    <span class="n">GameObject</span> <span class="n">outlineObj</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GameObject</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">transform</span><span class="p">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">transform</span><span class="p">.</span><span class="n">position</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">transform</span><span class="p">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="n">transform</span><span class="p">.</span><span class="n">rotation</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">AddComponent</span><span class="o">&lt;</span><span class="n">meshfilter</span><span class="o">&gt;</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">AddComponent</span><span class="o">&lt;</span><span class="n">meshrenderer</span><span class="o">&gt;</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">Mesh</span> <span class="n">mesh</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">mesh</span> <span class="o">=</span> <span class="p">(</span><span class="n">Mesh</span><span class="p">)</span> <span class="n">Instantiate</span><span class="p">(</span><span class="n">GetComponent</span><span class="o">&lt;</span><span class="n">meshfilter</span><span class="o">&gt;</span><span class="p">().</span><span class="n">mesh</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">GetComponent</span><span class="o">&lt;</span><span class="n">meshfilter</span><span class="o">&gt;</span><span class="p">().</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">transform</span><span class="p">.</span><span class="n">parent</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="n">transform</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">materials</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Material</span><span class="p">[</span><span class="n">materialsNum</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">materialsNum</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">materials</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Material</span><span class="p">(</span><span class="n">Shader</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="s">&quot;Outline/Outline&quot;</span><span class="p">));</span>
+</span><span class='line'>      <span class="n">materials</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">SetColor</span><span class="p">(</span><span class="s">&quot;_OutlineColor&quot;</span><span class="p">,</span> <span class="n">outlineColor</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">outlineObj</span><span class="p">.</span><span class="n">GetComponent</span><span class="o">&lt;</span><span class="n">meshrenderer</span><span class="o">&gt;</span><span class="p">().</span><span class="n">materials</span> <span class="o">=</span> <span class="n">materials</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Vincenzo Giovanni Comito</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-24T02:50:30+02:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/development/'>development</a>, <a class='category' href='/blog/categories/game/'>game</a>, <a class='category' href='/blog/categories/shader/'>shader</a>, <a class='category' href='/blog/categories/transparency/'>transparency</a>, <a class='category' href='/blog/categories/unity/'>unity</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://clynamen.github.io/blog/2014/06/24/outline-in-unity-with-mesh-transparency/" data-via="cIynamen" data-counturl="http://clynamen.github.io/blog/2014/06/24/outline-in-unity-with-mesh-transparency/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/06/24/voxelization-in-unity/" title="Previous Post: Voxelization in Unity">&laquo; Voxelization in Unity</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2017/10/15/sdc-weekly/" title="Next Post: Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE]">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE] &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/05/31/julia_opencv/">Julia and the current status of OpenCV bindings</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/02/04/carsim2d/">Experimente mit Rust - Carsim2d [DE]</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/10/15/sdc-weekly_de/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [EN]</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/10/15/sdc-weekly/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE]</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/outline-in-unity-with-mesh-transparency/">Outline in Unity with mesh transparency</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section id="twitter">
+  <h1 class="tweets">Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("cIynamen", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/cIynamen">@cIynamen</a></p>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/clynamen">@clynamen</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'clynamen',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2019 -  Vincenzo Giovanni Comito <br/>
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a> + <a href="https://github.com/clynamen/wired_next">theme: wired_next, a mnml fork</a>.
+	  
+  </span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

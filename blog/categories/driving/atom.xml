@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: driving | The Infornographer]]></title>
+  <link href="http://clynamen.github.io/blog/categories/driving/atom.xml" rel="self"/>
+  <link href="http://clynamen.github.io/"/>
+  <updated>2019-06-01T01:10:39+02:00</updated>
+  <id>http://clynamen.github.io/</id>
+  <author>
+    <name><![CDATA[Vincenzo Giovanni Comito]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [EN]]]></title>
+    <link href="http://clynamen.github.io/blog/2017/10/15/sdc-weekly_de/"/>
+    <updated>2017-10-15T00:00:00+02:00</updated>
+    <id>http://clynamen.github.io/blog/2017/10/15/sdc-weekly_de</id>
+    <content type="html"><![CDATA[<h2><strong>General Motors</strong> kauft <strong>Strobe</strong>, solid-state lidar company</h2>
+
+<p><em>Note: This post was translated from English and reviewed with google translate</em></p>
+
+<p>Dies ist die größte Wichtigste Neuigkeit der Woche. Wir wissen gany genau, dass viele Automobilhersteller mögen solid-state Lidars: Selbst wenn drehend Laser Scanner arbeiten für Forschung und Prototypen (hohe Leistung und Genaugigkeit, aber hohe Kosten) man denkt nicht, sie benutzen in Massenproduktion: rotierende Komponenten halten nicht lange für Anwendung wo Genauigkeit wichtig ist. Du willst nicht, dass die Benutzer ihre Autos zurückbringen, um Lidars zu reparieren</p>
+
+<p>Solid State Lidars wirklich interessant aussehen: keine beweglichen Teile, alles unterbringet in ein Chip, mit geringen Kosten, vergleichbar Genaiugkeit und Reichweite. Aber es gibt ein nur Problem: Wir können sie leicht machen. Trotz sie sind bekannt für einegen Jahren, Solid State Lidars sind schwer zur produzieren. Naturlich dank Investitionen Firma verbessern ihre Lidars von Jahr zur Jahr und das Entwicklung von Konsumgütern ist in der nähe. Du erinnerst dich vielleicht, das Gleiche passiert mit ToF Cameras: Kosten ging von Tausende von Dollars bis ein paar 100$ in ein wenige Jahren (denke an Xbox One Kinect heutzutage).</p>
+
+<p>Es gibt einigen Firmas wie Strobe auf dem Markt. Sie sind noch in ihrer Start-up Phase so es macht Sinn, sie jetzt zu kaufen. Die Entscheidung der Chefs von GM scheint gut wenn man bedenkt, dass andere Firma wird ähnlich tun: <a href="https://www.forbes.com/sites/samabuelsamid/2016/08/16/ford-and-baidu-lead-new-150-million-investment-in-lidar-maker-velodyne/#e23884e1de78">Ford investiert in Velodyne im letzen Jahr</a>, <a href="http://www.eenewsautomotive.com/news/continental-buys-lidar-business-asc">Continental kauft ASC</a>, Tesla&hellip;</p>
+
+<p>&hellip;Nun, Tesls sagt: <em>&ldquo;Mann, keine Lidars, wir Haben Cameras&rdquo;</em>.</p>
+
+<p>Und sie sind allein:</p>
+
+<h2><strong>Comma.ai</strong> shares cool and shiny deep learning videos</h2>
+
+<p>Comma.ai teilt neue und glänzend deep learning Videos</p>
+
+<p>Die Firma von George Hotz liebt cameras. Sie sind billig,
+Man kann finden sie an ein handy und am wichtigsten Sie
+sind menschliche Augen ähnlich.
+Und wenn ein Mesnch mit seinen Augen fahren kann, warum sollte
+dann kein Computer? Das is der gleich Ansatz von Tesla,
+aber Comma.ai scheint  di meinsten seiner Resourcen
+auf Deep Learning investieren zu.</p>
+
+<p>Zum Beispiel: image segmentation:</p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">This is a single frame no context prediction. Imagine once I get the unsupervised temporal working. Computer vision is unreal! <a href="https://t.co/FhoLSkURSF">pic.twitter.com/FhoLSkURSF</a></p>&mdash; comma ai (@comma_ai) <a href="https://twitter.com/comma_ai/status/914193480280293376?ref_src=twsrc%5Etfw">September 30, 2017</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p><br/></p>
+
+<p>&hellip; oder, du weißt , ersetyen Lidars für <strong>Depth Data</strong>:</p>
+
+<p><br/></p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Depth. Trained entirely in simulation. <a href="https://t.co/8sY8IATjfn">pic.twitter.com/8sY8IATjfn</a></p>&mdash; comma ai (@comma_ai) <a href="https://twitter.com/comma_ai/status/917838943030165504?ref_src=twsrc%5Etfw">October 10, 2017</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p><br/></p>
+
+<p>Es ist interessant das Trainingsdaten wurden geniert mit annotiert Bilden (dank dem <a href="https://commacoloring.herokuapp.com/">adult coloring books Projekt</a> ) und Simulationen</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE]]]></title>
+    <link href="http://clynamen.github.io/blog/2017/10/15/sdc-weekly/"/>
+    <updated>2017-10-15T00:00:00+02:00</updated>
+    <id>http://clynamen.github.io/blog/2017/10/15/sdc-weekly</id>
+    <content type="html"><![CDATA[<p><em>So, as you can see it&rsquo;s long time I don&rsquo;t write anything on this blog. Despite the intention to write short tutorials, personal opinions, and other technical stuff, this blog was always at the bottom of my always-increasing to-do stack.
+Why am I then committing myself to write a weekly update on the status of self-driving car development and research? Well, as always there is both a practical argument and a leisure reason: I love talking about this field, which is continuously evolving with exciting changes every day, and I am currently learning German, thus I want to exercise my writing skills daily (which, at the moment, are really bad. But fear not: the posts will be published in English too.)
+This series of post will be mostly based on news published on other websites or forums. So don&rsquo;t expect to find the latest rumors but, instead, a review of most important events happened during the week.</em></p>
+
+<h2><strong>General Motors</strong> buys <strong>Strobe</strong>, solid-state lidar company</h2>
+
+<p>This is definitely the biggest news of the week. We know quite well that many cars manufacturers have high expectations on
+solid-state lidars: While rotating laser scanner works for research or prototypes (high performance and accuracy, yet high costs) it is unthinkable to use them in actual user mass-production: Moving an array of laser around accurately requires high manufacturing costs and, most importantly continuously high frequency rotating components do not last long for accurate applications. You don&rsquo;t want users to bring their car back every year for replacing their faulty lidar.</p>
+
+<p><strong>Solid state lidars look really interesting instead</strong>: no moving parts, everything fits in a single chip, lower costs and comparable accuracy and range. Only problem: we are not quite there yet. Despite being known for a few years, solid-state lidars are quite hard to implement. Of course, now that money is poured into, companies are improving their lidars year by year and the development of off-the-shelf consumer solution looks near. You may remember the same happened to ToF cameras: cost decreased from thousands of dollars to a couple 100$ in a few years (think about the Xbox One Kinect today).</p>
+
+<p>There are just a few companies like <strong>Strobe</strong> around. They are still in their start-up phase and thus it make sense to buy them now. We can agree that the decision of <strong>GM</strong>&rsquo;s board seems quite good considering that other companies will probably do something similar in the future: <a href="https://www.forbes.com/sites/samabuelsamid/2016/08/16/ford-and-baidu-lead-new-150-million-investment-in-lidar-maker-velodyne/#e23884e1de78">Ford invested in Velodyne last year</a>, <a href="http://www.eenewsautomotive.com/news/continental-buys-lidar-business-asc">Continental bought ASC</a>, Tesla&hellip;</p>
+
+<p>&hellip;Well, <strong>Tesla</strong> says &ldquo;<em>Fuck, we don&rsquo;t use lidars, we have <strong>cameras</strong></em>&rdquo;.</p>
+
+<p>And they are not alone:</p>
+
+<h2><strong>Comma.ai</strong> shares cool and shiny deep learning videos</h2>
+
+<p><strong>George Hotz</strong>&rsquo;s company loves cameras. They are cheap, they can be found on a mobile phone and most importantly they are the closest thing to an human eye. <strong>And if a human can drive a car with his eyes, why shouldn&rsquo;t a computer</strong>?
+This is the same approach of Tesla, expect that Comma.ai seems to invest most of his resources on deep learning.
+We know that the Line Keeping Assistant algorithm of <a href="https://github.com/commaai/openpilot/">openpilot</a> is based on an end-to-end deep neural network, but lately the company is looking to exploit DNN for other scopes:</p>
+
+<p>For instance <strong>image segmentation</strong>:</p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">This is a single frame no context prediction. Imagine once I get the unsupervised temporal working. Computer vision is unreal! <a href="https://t.co/FhoLSkURSF">pic.twitter.com/FhoLSkURSF</a></p>&mdash; comma ai (@comma_ai) <a href="https://twitter.com/comma_ai/status/914193480280293376?ref_src=twsrc%5Etfw">September 30, 2017</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p><br/></p>
+
+<p>&hellip; or, you know, replacing the previously cited Lidars for <strong>depth data</strong></p>
+
+<p><br/></p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Depth. Trained entirely in simulation. <a href="https://t.co/8sY8IATjfn">pic.twitter.com/8sY8IATjfn</a></p>&mdash; comma ai (@comma_ai) <a href="https://twitter.com/comma_ai/status/917838943030165504?ref_src=twsrc%5Etfw">October 10, 2017</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p><br/></p>
+
+<p>It is interesting to note how the training data was respectively generated by manually  annotated images (thanks to the <a href="https://commacoloring.herokuapp.com/">adult coloring books project</a> ) and simulations.</p>
+]]></content>
+  </entry>
+  
+</feed>
