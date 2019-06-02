@@ -21,7 +21,7 @@ var yearsApart=milli/milliPerYear;
 document.write(Math.floor(yearsApart)); 
 
 </script> 
-mechatronic engineer at Luxoft, where I work as a software engineer in the [autonomous driving division](https://www.luxoft.com/automotive/#autonomous-drive).</div> <div></div>
+mechatronic engineer at Luxoft, where I work as a software engineer in the <a href="https://www.luxoft.com/automotive/#autonomous-drive">autonomous driving division</a>.</div> 
 
 My main interests are related to **robotics**, **machine learning**, and **infosec**. 
 
