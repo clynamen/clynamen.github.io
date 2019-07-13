@@ -4,7 +4,7 @@
   <title><![CDATA[The Infornographer]]></title>
   <link href="http://clynamen.github.io/atom.xml" rel="self"/>
   <link href="http://clynamen.github.io/"/>
-  <updated>2019-06-02T07:24:57+02:00</updated>
+  <updated>2019-07-13T19:23:12+02:00</updated>
   <id>http://clynamen.github.io/</id>
   <author>
     <name><![CDATA[Vincenzo Giovanni Comito]]></name>
@@ -12,6 +12,382 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    
+    <title type="html"><![CDATA[Programmatically create function in Julia with metaprogramming]]></title>
+    <link href="http://clynamen.github.io/blog/2019/06/16/julia_def_fun_macro/"/>
+    
+    <updated>2019-06-16T01:00:00+02:00</updated>
+    <id>http://clynamen.github.io/blog/2019/06/16/julia_def_fun_macro</id>
+    
+    <content type="html"><![CDATA[<p>In the <a href="http://clynamen.github.io/blog/2019/05/31/julia_opencv/">last post</a>, I was evaluating various solutions for generating the <strong>Julia-OpenCV</strong> bindings I dream of.</p>
+
+<p>I am currently studying how the <a href="https://github.com/JuliaInterop/libcxxwrap-julia/">libcxxwrap</a> library works, in order to check if it fits my requirements. I quickly noticed that it misses the capability of generating function with keywords (see the <a href="https://github.com/JuliaInterop/libcxxwrap-julia/issues/27">Github issue</a>). This feature would be really interesting for the binding since OpenCV uses a lot of default and keyword arguments, both of which are nicely supported in python.</p>
+
+<p>But no worries, <a href="https://docs.julialang.org/en/v1/manual/metaprogramming/index.html">Julia is a Lisp</a> (or, at least, looks very much like it for many reasons). It should be easy to manipulate function code in order to add defaults, keyword, etc&hellip;</p>
+
+<p>Let&rsquo;s find out how.</p>
+
+<h2>Basics</h2>
+
+<p>The fundamentals of Julia metaprogramming are explained in <a href="https://docs.julialang.org/en/v1/manual/metaprogramming/index.html">the official documentation</a>. You should read that before going further. However, we will start with the easy stuff.</p>
+
+<p>First, let&rsquo;s write a macro that creates a function.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">macro</span> <span class="n">make_fn1</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">name_str</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">$</span><span class="s">name&quot;</span>
+</span><span class='line'>  <span class="k">quote</span>
+</span><span class='line'>      <span class="k">function</span><span class="nf"> </span><span class="o">$(</span><span class="n">esc</span><span class="p">(</span><span class="n">name</span><span class="p">))()</span>
+</span><span class='line'>          <span class="n">println</span><span class="p">(</span><span class="s">&quot;Hello &quot;</span><span class="p">,</span> <span class="o">$</span><span class="n">name_str</span><span class="p">,</span> <span class="s">&quot;!&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">@</span><span class="n">make_fn1</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+</span><span class='line'><span class="c"># Hello World!</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What happens when macro <strong>make_fn1</strong> is called? We first take value of the macro argument <strong>name</strong> and convert it into a string, which will be used later for printing. Then, we return an expression that defines a function. The name of the function comes from the same macro argument.
+When the macro is called, the returned expression is evaluated and thus the function &lsquo;world&rsquo; is defined.</p>
+
+<p>We can inspect the expression returned by <strong>make_fn1</strong> by using the @macroexpand macro:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">macroexpand</span> <span class="p">@</span><span class="n">make_fn1</span><span class="p">(</span><span class="n">pizza</span><span class="p">)</span>
+</span><span class='line'><span class="k">quote</span>
+</span><span class='line'>    <span class="k">function</span><span class="nf"> pizza</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">(</span><span class="n">Main</span><span class="o">.</span><span class="n">println</span><span class="p">)(</span><span class="s">&quot;Hello &quot;</span><span class="p">,</span> <span class="s">&quot;pizza&quot;</span><span class="p">,</span> <span class="s">&quot;!&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note how in the function declaration we used <code>$(esc(name))</code> instead of just using <code>$(name)</code>. Otherwise, Julia <strong>hygiene rules</strong> will cause the function to have a random name:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">macro</span> <span class="n">make_fn1_bad</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">name_str</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">$</span><span class="s">name&quot;</span>
+</span><span class='line'>  <span class="k">quote</span>
+</span><span class='line'>      <span class="k">function</span><span class="nf"> </span><span class="o">$(</span><span class="n">name</span><span class="p">)()</span>
+</span><span class='line'>          <span class="n">println</span><span class="p">(</span><span class="s">&quot;Hello &quot;</span><span class="p">,</span> <span class="o">$</span><span class="n">name_str</span><span class="p">,</span> <span class="s">&quot;!&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">macroexpand</span> <span class="p">@</span><span class="n">make_fn1_bad</span><span class="p">(</span><span class="n">pizza</span><span class="p">)</span>
+</span><span class='line'><span class="k">quote</span>
+</span><span class='line'>    <span class="k">function</span><span class="nf"> </span><span class="o">#</span><span class="mi">18</span><span class="c">#pizza() # &lt;- random name was generated</span>
+</span><span class='line'>        <span class="p">(</span><span class="n">Main</span><span class="o">.</span><span class="n">println</span><span class="p">)(</span><span class="s">&quot;Hello &quot;</span><span class="p">,</span> <span class="s">&quot;pizza&quot;</span><span class="p">,</span> <span class="s">&quot;!&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Adding arguments</h2>
+
+<p>Ok, we can now generate function with arbitrary names, but we still miss arguments. A possible solution for this was discussed in this <a href="https://discourse.julialang.org/t/defining-function-inside-a-macro/9139">discourse thread</a>.</p>
+
+<p>This is the proposed solution:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">macro</span> <span class="n">make_fn2</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="o">...</span><span class="p">)</span>
+</span><span class='line'>   <span class="n">name_str</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">$</span><span class="s">name&quot;</span>
+</span><span class='line'>   <span class="n">argstup</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="k">quote</span>
+</span><span class='line'>       <span class="k">function</span><span class="nf"> </span><span class="o">$(</span><span class="n">esc</span><span class="p">(</span><span class="n">name</span><span class="p">))(</span><span class="o">$</span><span class="p">(</span><span class="n">map</span><span class="p">(</span><span class="n">esc</span><span class="p">,</span> <span class="n">argstup</span><span class="p">)</span><span class="o">...</span><span class="p">))</span>
+</span><span class='line'>           <span class="n">println</span><span class="p">(</span><span class="o">$</span><span class="n">name_str</span><span class="p">)</span>
+</span><span class='line'>           <span class="n">map</span><span class="p">(</span><span class="n">println</span><span class="p">,</span> <span class="p">[(</span><span class="o">$</span><span class="p">(</span><span class="n">map</span><span class="p">(</span><span class="n">esc</span><span class="p">,</span> <span class="n">argstup</span><span class="p">)</span><span class="o">...</span><span class="p">))])</span>
+</span><span class='line'>       <span class="k">end</span>
+</span><span class='line'>   <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">@</span><span class="n">make_fn2</span><span class="p">(</span><span class="n">example_fun</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">julia</span><span class="o">&gt;</span> <span class="n">example_fun</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="s">&quot;dog&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'><span class="mf">1.2</span>
+</span><span class='line'><span class="n">dog</span>
+</span><span class='line'><span class="mi">3</span>
+</span><span class='line'><span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">macroexpand</span> <span class="p">@</span><span class="n">make_fn2</span><span class="p">(</span><span class="n">example_fun</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</span><span class='line'><span class="k">quote</span>
+</span><span class='line'>    <span class="c">#= /home/clynamen/software/tests/julia/main.jl:50 =#</span>
+</span><span class='line'>    <span class="k">function</span><span class="nf"> sum_all</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</span><span class='line'>        <span class="c">#= /home/clynamen/software/tests/julia/main.jl:51 =#</span>
+</span><span class='line'>        <span class="p">(</span><span class="n">Main</span><span class="o">.</span><span class="n">println</span><span class="p">)(</span><span class="s">&quot;sum_all&quot;</span><span class="p">)</span>
+</span><span class='line'>        <span class="c">#= /home/clynamen/software/tests/julia/main.jl:52 =#</span>
+</span><span class='line'>        <span class="p">(</span><span class="n">Main</span><span class="o">.</span><span class="n">map</span><span class="p">)(</span><span class="n">Main</span><span class="o">.</span><span class="n">println</span><span class="p">,</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>A more complex example</h2>
+
+<p>ok, how to add default arguments now?</p>
+
+<p>I have tried to extend the previous solution and failed.
+I thought it was possible to use this substitution syntax again but I still didn&rsquo;t
+figure out how the parser works with the macro output.</p>
+
+<p><strong>However, there is a better way to do this</strong>: We can easily manipulate
+the <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> programmatically,
+by composing list of keywords and arguments. Even better, Julia allows you to
+inspect the AST via the <code>@dump</code> macro:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">julia</span><span class="o">&gt;</span> <span class="n">Meta</span><span class="o">.</span><span class="p">@</span><span class="n">dump</span><span class="p">(</span> <span class="n">function</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s">&quot;hello&quot;</span><span class="p">)</span> <span class="k">end</span><span class="p">)</span>
+</span><span class='line'><span class="n">Expr</span>
+</span><span class='line'>  <span class="n">head</span><span class="p">:</span> <span class="n">Symbol</span> <span class="k">function</span><span class="nf"></span>
+</span><span class='line'><span class="nf">  args</span><span class="p">:</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Any</span><span class="p">}((</span><span class="mi">2</span><span class="p">,))</span>
+</span><span class='line'>    <span class="mi">1</span><span class="p">:</span> <span class="n">Expr</span>
+</span><span class='line'>      <span class="n">head</span><span class="p">:</span> <span class="n">Symbol</span> <span class="nb">tuple</span>
+</span><span class='line'>      <span class="n">args</span><span class="p">:</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Any</span><span class="p">}((</span><span class="mi">3</span><span class="p">,))</span>
+</span><span class='line'>        <span class="mi">1</span><span class="p">:</span> <span class="n">Symbol</span> <span class="n">a</span>
+</span><span class='line'>        <span class="mi">2</span><span class="p">:</span> <span class="n">Symbol</span> <span class="n">b</span>
+</span><span class='line'>        <span class="mi">3</span><span class="p">:</span> <span class="n">Expr</span>
+</span><span class='line'>          <span class="n">head</span><span class="p">:</span> <span class="n">Symbol</span> <span class="o">=</span>
+</span><span class='line'>          <span class="n">args</span><span class="p">:</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Any</span><span class="p">}((</span><span class="mi">2</span><span class="p">,))</span>
+</span><span class='line'>            <span class="mi">1</span><span class="p">:</span> <span class="n">Symbol</span> <span class="n">c</span>
+</span><span class='line'>            <span class="mi">2</span><span class="p">:</span> <span class="n">String</span> <span class="s">&quot;hello&quot;</span>
+</span><span class='line'>    <span class="mi">2</span><span class="p">:</span> <span class="n">Expr</span>
+</span><span class='line'>      <span class="n">head</span><span class="p">:</span> <span class="n">Symbol</span> <span class="n">block</span>
+</span><span class='line'>      <span class="n">args</span><span class="p">:</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Any</span><span class="p">}((</span><span class="mi">1</span><span class="p">,))</span>
+</span><span class='line'>        <span class="mi">1</span><span class="p">:</span> <span class="n">LineNumberNode</span>
+</span><span class='line'>          <span class="n">line</span><span class="p">:</span> <span class="kt">Int64</span> <span class="mi">1</span>
+</span><span class='line'>          <span class="n">file</span><span class="p">:</span> <span class="n">Symbol</span> <span class="n">none</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is pretty handy: you can write an example of the expression you would like to build,
+inspect its AST and use it as a reference.</p>
+
+<p>Note how the function arguments are just a list of <code>Symbol</code>s and <code>Expr</code>essions.</p>
+
+<p><strong>Finally</strong>, here an example of a macro that defines a function with default and keyword arguments:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">macro</span> <span class="n">makefn</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>   <span class="c"># Let&#39;s start defining the name and</span>
+</span><span class='line'>   <span class="c"># arguments declaration</span>
+</span><span class='line'>   <span class="n">call</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(:</span><span class="n">call</span><span class="p">)</span>
+</span><span class='line'>   <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c"># keyword arguments of the new function</span>
+</span><span class='line'>   <span class="n">kwargs_list</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c"># In julia, the keyword arguments are added at</span>
+</span><span class='line'>   <span class="c"># the begin of the list, even if they appear</span>
+</span><span class='line'>   <span class="c"># last in the syntax. So, process kwargs first:</span>
+</span><span class='line'>   <span class="k">for</span> <span class="n">arg</span> <span class="k">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">args</span>
+</span><span class='line'>      <span class="k">if</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">==</span> <span class="n">Symbol</span>
+</span><span class='line'>         <span class="c"># plain keyword arg</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">kwargs_list</span><span class="p">,</span> <span class="n">esc</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+</span><span class='line'>      <span class="k">elseif</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">==</span> <span class="n">Expr</span>
+</span><span class='line'>         <span class="c"># default keyword arg</span>
+</span><span class='line'>         <span class="n">kw</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(:</span><span class="n">kw</span><span class="p">)</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">kw</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">esc</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">kw</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">arg</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">kwargs_list</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>   <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c"># Keyword arguments are defined in a</span>
+</span><span class='line'>   <span class="c"># :parameters Expr</span>
+</span><span class='line'>   <span class="n">parameters</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(:</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>   <span class="n">parameters</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">kwargs_list</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c"># add the keyword arguments at the begin of</span>
+</span><span class='line'>   <span class="c"># the argument list</span>
+</span><span class='line'>   <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c"># now process plain arguments</span>
+</span><span class='line'>   <span class="k">for</span> <span class="n">arg</span> <span class="k">in</span> <span class="n">args</span><span class="o">.</span><span class="n">args</span>
+</span><span class='line'>      <span class="k">if</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">==</span> <span class="n">Symbol</span>
+</span><span class='line'>         <span class="c"># normal arg</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">esc</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+</span><span class='line'>      <span class="k">elseif</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">==</span> <span class="n">Expr</span>
+</span><span class='line'>         <span class="c"># default arg</span>
+</span><span class='line'>         <span class="n">kw</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(:</span><span class="n">kw</span><span class="p">)</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">kw</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">esc</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">kw</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">arg</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</span><span class='line'>         <span class="n">push</span><span class="o">!</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>   <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c"># a function Expr has two arguments:</span>
+</span><span class='line'>   <span class="c"># the declaration and the :block that defines the</span>
+</span><span class='line'>   <span class="c"># function implementation.</span>
+</span><span class='line'>   <span class="c"># For this example, we define an empty :block</span>
+</span><span class='line'>   <span class="n">fn_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">call</span><span class="p">,</span> <span class="n">Expr</span><span class="p">(:</span><span class="n">block</span><span class="p">)]</span>
+</span><span class='line'>   <span class="n">fn</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">(:</span><span class="n">function</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="n">append</span><span class="o">!</span><span class="p">(</span><span class="n">fn</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">fn_args</span><span class="p">)</span>
+</span><span class='line'>   <span class="n">fn</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># example usage</span>
+</span><span class='line'><span class="p">@</span><span class="n">makefn</span><span class="p">(</span><span class="s">&quot;more_complex_fun&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s">&quot;hello&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="s">&quot;world&quot;</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Check out the function generated by the macro:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">macroexpand1</span> <span class="p">@</span><span class="n">makefn</span><span class="p">(</span><span class="s">&quot;more_complex_fun&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s">&quot;hello&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="s">&quot;world&quot;</span><span class="p">))</span>
+</span><span class='line'><span class="p">:(</span><span class="k">function</span><span class="nf"> </span><span class="o">(</span><span class="n">Main</span><span class="o">.</span><span class="n">more_complex_fun</span><span class="p">)(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s">&quot;hello&quot;</span><span class="p">;</span> <span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="s">&quot;world&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusions</h2>
+
+<p>I think the AST manipulation offers what I need for extending <strong>libcxxwrap</strong>. Probably it will
+also be useful during the actual binding generation, allowing to automatically write Julia code that better integrates with the OpenCV interface.</p>
+]]></content>
+    
+  </entry>
   
   <entry>
     
