@@ -9,7 +9,7 @@
   <meta name="author" content="Vincenzo Giovanni Comito">
 
   
-  <meta name="description" content="In the last post, I was evaluating various solutions for generating the Julia-OpenCV bindings I dream of. I am currently studying how the libcxxwrap &hellip;">
+  <meta name="description" content="I am in the mid of developing a personal project which involves cameras and videostreaming. While working on this project, I built a small port of &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -71,6 +71,54 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+  
+    
+      <h1 class="entry-title"><a href="/blog/2020/04/23/basic_http_webm_server_rust/">A Basic HTTP WebM Server in Rust</a></h1>
+      
+      
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2020-04-23T01:00:00+02:00" pubdate data-updated="true"></time>
+        
+         | <a href="/blog/2020/04/23/basic_http_webm_server_rust/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I am in the mid of developing a personal project which involves cameras and videostreaming.</p>
+
+<p>While working on this project, I built a small port of the <a href="https://github.com/sdroege/http-launch">HTTP streaming server of Sebastian Dröge</a> <strong>from C into rust</strong>:</p>
+
+<p><a href="https://github.com/clynamen/basic_http_webm_server_rust">clynamen/basic_http_webm_server_rust</a></p>
+
+<p>The server uses a minimal tokio server and the <a href="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs">gstreamer-rs</a> library (of which the same S. Dröge is the main contributor).</p>
+
+<p>The main difference between the two version consists in the absence of the <strong>multisocketsink</strong> element, which is not currently available on rust. This element allows to connect multiple TCP sockets to the gstreamer pipeline, thus providing a simple way for sending the video to multiple clients. In the rust version, this is replaced (probably in a bad way) by an appsink and multiple <a href="https://doc.rust-lang.org/std/sync/mpsc/">mpsc</a> queues.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1709,6 +1757,10 @@ Cube side: 0.03</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2020/04/23/basic_http_webm_server_rust/">A basic HTTP WebM server in rust</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2019/06/16/julia_def_fun_macro/">Programmatically create function in Julia with metaprogramming</a>
       </li>
     
@@ -1722,10 +1774,6 @@ Cube side: 0.03</p>
     
       <li class="post">
         <a href="/blog/2017/10/15/sdc-weekly_de/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [EN]</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2017/10/15/sdc-weekly/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE]</a>
       </li>
     
   </ul>
@@ -1787,7 +1835,7 @@ Cube side: 0.03</p>
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2019 -  Vincenzo Giovanni Comito <br/>
+  Copyright &copy; 2020 -  Vincenzo Giovanni Comito <br/>
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a> + <a href="https://github.com/clynamen/wired_next">theme: wired_next, a mnml fork</a>.
 	  
   </span>

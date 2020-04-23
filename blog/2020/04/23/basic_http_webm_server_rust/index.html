@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: computer vision - The Infornographer</title>
+  <title>A basic HTTP WebM server in rust - The Infornographer</title>
   <meta name="author" content="Vincenzo Giovanni Comito">
 
   
-  <meta name="description" content="Category: computer vision">
+  <meta name="description" content="I am in the mid of developing a personal project which involves cameras and videostreaming. While working on this project, I built a small port of &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://clynamen.github.io/blog/categories/computer-vision">
+  <link rel="canonical" href="http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="The Infornographer" type="application/atom+xml">
@@ -70,40 +70,103 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Computer Vision</h1>
+  
+    
+      <h1 class="entry-title">A Basic HTTP WebM Server in Rust</h1>
+    
+  
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2020-04-23T01:00:00+02:00" pubdate data-updated="true"></time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>I am in the mid of developing a personal project which involves cameras and videostreaming.</p>
 
-  
-  <h2>2017</h2>
+<p>While working on this project, I built a small port of the <a href="https://github.com/sdroege/http-launch">HTTP streaming server of Sebastian Dröge</a> <strong>from C into rust</strong>:</p>
 
-<article>
-  
-<h1><a href="/blog/2017/10/15/sdc-weekly_de/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [EN]</a></h1>
-<time datetime="2017-10-15T00:00:00+02:00" pubdate><span class='month'>October</span> <span class='day'>15</span> <span class='year'>2017</span></time>
+<p><a href="https://github.com/clynamen/basic_http_webm_server_rust">clynamen/basic_http_webm_server_rust</a></p>
 
-</article>
+<p>The server uses a minimal tokio server and the <a href="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs">gstreamer-rs</a> library (of which the same S. Dröge is the main contributor).</p>
 
-
-
-<article>
-  
-<h1><a href="/blog/2017/10/15/sdc-weekly/">Self Driving Car Weekly Highlights | Week 08/10/17 - 15/10/17 [DE]</a></h1>
-<time datetime="2017-10-15T00:00:00+02:00" pubdate><span class='month'>October</span> <span class='day'>15</span> <span class='year'>2017</span></time>
-
-</article>
-
+<p>The main difference between the two version consists in the absence of the <strong>multisocketsink</strong> element, which is not currently available on rust. This element allows to connect multiple TCP sockets to the gstreamer pipeline, thus providing a simple way for sending the video to multiple clients. In the rust version, this is replaced (probably in a bad way) by an appsink and multiple <a href="https://doc.rust-lang.org/std/sync/mpsc/">mpsc</a> queues.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Vincenzo Giovanni Comito</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2020-04-23T01:00:00+02:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/gstreamer/'>gstreamer</a>, <a class='category' href='/blog/categories/rust/'>rust</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust/" data-via="cIynamen" data-counturl="http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/06/16/julia_def_fun_macro/" title="Previous Post: Programmatically create function in Julia with metaprogramming">&laquo; Programmatically create function in Julia with metaprogramming</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -206,7 +269,10 @@
       var disqus_shortname = 'clynamen-github-io';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust/';
+        var disqus_url = 'http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: gstreamer | The Infornographer]]></title>
+  <link href="http://clynamen.github.io/blog/categories/gstreamer/atom.xml" rel="self"/>
+  <link href="http://clynamen.github.io/"/>
+  <updated>2020-04-23T22:58:05+02:00</updated>
+  <id>http://clynamen.github.io/</id>
+  <author>
+    <name><![CDATA[Vincenzo Giovanni Comito]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[A basic HTTP WebM server in rust]]></title>
+    <link href="http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust/"/>
+    <updated>2020-04-23T01:00:00+02:00</updated>
+    <id>http://clynamen.github.io/blog/2020/04/23/basic_http_webm_server_rust</id>
+    <content type="html"><![CDATA[<p>I am in the mid of developing a personal project which involves cameras and videostreaming.</p>
+
+<p>While working on this project, I built a small port of the <a href="https://github.com/sdroege/http-launch">HTTP streaming server of Sebastian Dröge</a> <strong>from C into rust</strong>:</p>
+
+<p><a href="https://github.com/clynamen/basic_http_webm_server_rust">clynamen/basic_http_webm_server_rust</a></p>
+
+<p>The server uses a minimal tokio server and the <a href="https://gitlab.freedesktop.org/gstreamer/gstreamer-rs">gstreamer-rs</a> library (of which the same S. Dröge is the main contributor).</p>
+
+<p>The main difference between the two version consists in the absence of the <strong>multisocketsink</strong> element, which is not currently available on rust. This element allows to connect multiple TCP sockets to the gstreamer pipeline, thus providing a simple way for sending the video to multiple clients. In the rust version, this is replaced (probably in a bad way) by an appsink and multiple <a href="https://doc.rust-lang.org/std/sync/mpsc/">mpsc</a> queues.</p>
+]]></content>
+  </entry>
+  
+</feed>
