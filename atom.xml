@@ -4,7 +4,7 @@
   <title><![CDATA[The Infornographer]]></title>
   <link href="http://clynamen.github.io/atom.xml" rel="self"/>
   <link href="http://clynamen.github.io/"/>
-  <updated>2020-04-23T22:58:05+02:00</updated>
+  <updated>2020-05-02T11:29:48+02:00</updated>
   <id>http://clynamen.github.io/</id>
   <author>
     <name><![CDATA[Vincenzo Giovanni Comito]]></name>
@@ -12,6 +12,91 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    
+    <title type="html"><![CDATA[Buy a car with data - Part 1]]></title>
+    <link href="http://clynamen.github.io/blog/2020/05/02/buy_a_car_with_data-pt1/"/>
+    
+    <updated>2020-05-02T01:00:00+02:00</updated>
+    <id>http://clynamen.github.io/blog/2020/05/02/buy_a_car_with_data-pt1</id>
+    
+    <content type="html"><![CDATA[<p>I am currently looking for a used car, old but good enough for lasting a few years.</p>
+
+<p>Since I never owned a car, and I lack the anecdotal experience of the car market that many people have, I am likely going to buy a <a href="https://en.wikipedia.org/wiki/Lemon_(automobile)">lemon</a>.</p>
+
+<p>Well, let me try to <strong>buy a cheap lemon at least</strong>.</p>
+
+<h1>Get the data</h1>
+
+<h2>Autoscout24</h2>
+
+<p>I think <a href="https://www.autoscout24.it/">autoscout24.it</a> is the eBay of used cars in Italy. The website lists many offers from car dealerships and private sellers, with powerful search functionality and a nice looking, website free of ads.</p>
+
+<p><img src="http://clynamen.github.io/images/autoscout0.png" alt="" /></p>
+
+<p>Autoscout24 does offer a <a href="https://autoscout24.github.io/api/#introduction-listing-creation-api-upload">RESTful API</a>, but it seems targeted to dealerships.</p>
+
+<p>The best way for getting the data would be to find out how the website or the mobile app uses the API. This is what you want to do if you want to build a program that lasts for more than a few months. However, this could take some time since it <strong>involves inspecting the traffic and possibly some reversing</strong>.</p>
+
+<p>Let&rsquo;s look at one page from the website instead:</p>
+
+<p><img src="http://clynamen.github.io/images/autoscout1.png" alt="" /></p>
+
+<p>That&rsquo;s it. A <strong>simple table</strong> with the details we need. That&rsquo;s really easy to parse with xpath.</p>
+
+<p>How does the search work? You can choose many fields:</p>
+
+<p><img src="http://clynamen.github.io/images/autoscout2.png" alt="" /></p>
+
+<p>Let&rsquo;s run the search and inspect the url:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>https://www.autoscout24.it/lst?sort=standard&desc=0&offer=U&ustate=N%2CU&lon=7.683066&lat=45.068375&zip=Torino&zipr=10&cy=I&priceto=5000&pricefrom=2500&kmto=200000&kmfrom=10000&fregfrom=2010&atype=C</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>all the query parameters are nicely listed in the url</strong>. We can easily run any query.</p>
+
+<h2>Scrapy</h2>
+
+<p><a href="https://docs.scrapy.org/en/latest/intro/tutorial.html">Scrapy</a> is a well-designed python framework for scraping. It provides all the functionalities you need while taking care of the boilerplate code.</p>
+
+<p>You can use its <strong><a href="https://docs.scrapy.org/en/latest/topics/shell.html">shell</a></strong> to quickly play with xpath and css selectors. Just start it with an url:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>scrapy shell <span class="s1">&#39;https://www.autoscout24.it/annunci/volkswagen-polo-1-2-5p-trendline-benzina-nero-9c1c630f-ce6a-4d3a-b81b-be36702e318b&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and <strong>you get an IPython environment</strong> where the webpage result is ready to be processed.</p>
+
+<p>Once you find out how to get the data you need from the page, you write a <strong><a href="https://docs.scrapy.org/en/latest/topics/spiders.html">Spider</a></strong>. The core of a Spider is just a single <code>parse()</code> function, where you process the response of a <strong>GET</strong> request.</p>
+
+<p><code>parse()</code> conveniently uses the <strong>yield</strong> mechanism for processing each page. After extracting the data, you <strong>yield</strong> a simple dictionary (representing a single car in our case). This dictionary is appended to a designed output file (e.g. a simple csv).
+Then, you <strong>yield</strong> a new <strong>GET</strong> request so that you will process the next pages.</p>
+
+<p><strong>Less than 200 lines of python</strong> are enough for creating a dataset from autoscout.</p>
+
+<h2>Preview of the Dataset</h2>
+
+<p>I would have preferred to use Julia for this job, but there are no good scraping libraries currently. So, I will just use it for the data analysis part.</p>
+
+<p>Let&rsquo;s <strong>look at the dataset</strong>:</p>
+
+<p><img src="http://clynamen.github.io/images/autoscout3.png" alt="" /></p>
+
+<p>As you can see, I am interested in just a few properties: price, mileage (km), matriculation date, fuel, etc. There is some missing data, we will deal with it later. The dataset includes <strong>about 2000 vehicles</strong> from sellers in Turin.</p>
+
+<p>I selected gasoline or LPG vehicles due to traffic restrictions rules in my city. I don&rsquo;t really care about horsepower or model. Any 10 years old vehicle in the low price range will work for me. However, I will try to use many parameters for building a proper model for price prediction. Every time I will find a car I like, I will <strong>compare its price against the predicted one</strong>.</p>
+
+<p><img src="http://clynamen.github.io/images/autoscout4.jpg" alt="" /></p>
+
+<p>Actual analysis will be performed in the next post. Prepare yourself for a <strong>heavily technical post full of pie charts and linear regressions</strong>.</p>
+
+<p>You can find the scraper code <a href="https://github.com/clynamen/car_purchase">here</a></p>
+]]></content>
+    
+  </entry>
   
   <entry>
     
