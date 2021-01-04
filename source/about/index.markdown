@@ -7,6 +7,9 @@ sharing: true
 footer: true
 ---
 
+<img src="/images/aboutme.png">
+</img>
+
   
 <div style="display:inline;">I am a <script type="text/javascript">
 
