@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | The Infornographer]]></title>
   <link href="http://clynamen.github.io/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://clynamen.github.io/"/>
-  <updated>2020-05-02T11:31:13+02:00</updated>
+  <updated>2021-01-05T00:59:10+01:00</updated>
   <id>http://clynamen.github.io/</id>
   <author>
     <name><![CDATA[Vincenzo Giovanni Comito]]></name>
@@ -86,6 +86,14 @@ Then, you <strong>yield</strong> a new <strong>GET</strong> request so that you 
 <p>Actual analysis will be performed in the next post. Prepare yourself for a <strong>heavily technical post full of pie charts and linear regressions</strong>.</p>
 
 <p>You can find the scraper code <a href="https://github.com/clynamen/car_purchase">here</a>.</p>
+
+<p><br/></p>
+
+<hr />
+
+<p><br/></p>
+
+<p>Update 2021-04-01: as usual, my interests shifted on other stuff, so I am not going to write the second part of this blog post :P</p>
 ]]></content>
   </entry>
   

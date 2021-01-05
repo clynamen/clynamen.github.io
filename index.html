@@ -9,7 +9,7 @@
   <meta name="author" content="Vincenzo Giovanni Comito">
 
   
-  <meta name="description" content="I am currently looking for a used car, old but good enough for lasting a few years. Since I never owned a car, and I lack the anecdotal experience of &hellip;">
+  <meta name="description" content="Introduction The use of rust language in major companies is increasing and with it also the game dev community is growing. New libraries are &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -71,6 +71,530 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+  
+    
+      <h1 class="entry-title"><a href="/blog/2021/01/04/terrain_generation_bevy/">Terrain Generation in Bevy Engine - Part 1: Rendering</a></h1>
+      
+      
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2021-01-04T01:00:00+02:00" pubdate data-updated="true"></time>
+        
+         | <a href="/blog/2021/01/04/terrain_generation_bevy/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>Introduction</h1>
+
+<p>The use of rust language <a href="https://www.zdnet.com/article/rust-programming-language-were-using-it-for-bigger-projects-say-developers/">in major companies</a> is increasing  and with it also the game dev community is growing.</p>
+
+<p><a href="https://arewegameyet.rs/">New libraries are published almost weekly</a> and, with enough patieance, it&rsquo;s already possible to build a high-quality game. The open-world RPG <a href="https://veloren.net/">Veloren</a> is a notable example.</p>
+
+<p>Pushed by some recently published, impressive games such as <a href="https://www.youtube.com/watch?v=qPNiIeKMHyg">TLOU2</a> and <a href="https://www.youtube.com/watch?v=UnA7tepsc7s">Cyberpunk 2077</a> I decided to invest again part of my free time in gamedev experiments and to try out the new <a href="https://bevyengine.org/">Bevy</a> game engine.</p>
+
+<p>Bevy is an ECS-based, 2D and 3D game engine currently under development, but it provides already many features for a simple game.</p>
+
+<p><strong>In this post, we will build a simple terrain visualization</strong>, while also exploring some of Bevy&rsquo;s capabilities</p>
+
+<h2>Generating a mesh from a heightmap</h2>
+
+<p>Usually, terrain is described by a heightmap, usually a squared, grayscale image where each pixel encodes the height of the terrain at <strong>(x, z)</strong> coordinates</p>
+
+<p>(<em>note: we will work in a Y-up world</em>).</p>
+
+<p align="center">
+  <img alt="img-name" src="https://upload.wikimedia.org/wikipedia/commons/4/4d/Parinacota--S019W070.png" width="300">
+  <br>
+    <em>Example Heightmap from Wikipedia</em>
+</p>
+
+
+<p><strong>Our application will load the image and turn the heightmap into a mesh. </strong></p>
+
+<p>The simplest approach for doing this would be to partition a plane with a simple pattern of triangles, where the <strong>y</strong> component of each vector is sampled from the heightmap:</p>
+
+<p align="center">
+<img alt="img-name" src="/images/bevy_terrain0.png" width="200">
+<br>
+    <em>Simple triangle partition</em>
+</p>
+
+
+<p>For instance, by applying this approach on the simple heightmap on the left, we obtain the mesh on the right:</p>
+
+<div class="row" style="display: flex">
+  <div class="column" style="width: 50%; align-self: center">
+    <p align="center">
+        <img alt="img-name" src="/images/bevy_terrain2.png" width="200" style="border: #ccc 1px solid">
+        <br>
+        <em>Input Heightmap</em>
+    </p>
+  </div>
+  <div class="column"  style="width: 50%">
+    <p align="center">
+        <img alt="img-name" src="/images/bevy_terrain1.png" width="300">
+        <br>
+        <em>Output Mesh</em>
+    </p>
+  </div>
+</div>
+
+
+<p>  <div class="column"></p>
+
+<p>The above method is perfectly fine in most cases, but if we are going to generate and show multiple meshes (e.g. in an open-world game) the count of triangles is going to increase soon.</p>
+
+<h2>Reducing the number of triangles - RTIN</h2>
+
+<p>One simple option for reducing the number of triangles consists in <strong>approximating parts of the heightmap where the slope is low.</strong>
+This way, planar parts in our mesh will be composed by a minor number of triangles:</p>
+
+<p align="center">
+<img alt="img-name" src="/images/bevy_terrain3.png" width="300">
+<br>
+    <em>An approximated version of the previous mesh</em>
+</p>
+
+
+<p><a href="https://www.cs.ubc.ca/~will/papers/rtin.pdf">RTIN</a> (Right-Triangulated Irregular Networks) is one possible algorithm for achieving this. It was nicely described in <a href="https://observablehq.com/@mourner/martin-real-time-rtin-terrain-mesh">this Observable article</a> by Vladimir Agafonkin from Mapbox. I have ported his javascript code <a href="https://github.com/clynamen/bevy_terrain/blob/main/src/terrain_rtin.rs">into rust</a>.</p>
+
+<p>In a nutshell, the algorithm divides the space into two right-triangles recursively (like in a <a href="https://en.wikipedia.org/wiki/Binary_space_partitioning">BSP</a>). The obtained hierarchy allows choosing which triangle should be used for the mesh and which triangle should be ignored.
+I advise reading the article if you want to know how it works.</p>
+
+<p>The function</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">pub</span> <span class="k">fn</span> <span class="n">rtin_build_terrain_from_heightmap</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">heightmap</span><span class="o">:</span> <span class="o">&amp;</span><span class="n">HeightMapU16</span><span class="p">,</span> <span class="n">error_threshold</span><span class="o">:</span> <span class="kt">f32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TerrainMeshData</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>accepts the heightmap image data and the maximum allowed error as input. It follows the same process described in the article:</p>
+
+<ol>
+<li>computes the approximation error for each triangle</li>
+<li>traverses the triangle hierarchy, collecting all the triangles that satisfy the error_threshold</li>
+<li>computes and returns the vertices and indices of each selected triangle:</li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">pub</span> <span class="k">struct</span> <span class="n">TerrainMeshData</span> <span class="p">{</span>
+</span><span class='line'>   <span class="k">pub</span> <span class="n">vertices</span><span class="o">:</span> <span class="n">Vec</span><span class="o">::&lt;</span><span class="n">Vec3</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'>   <span class="k">pub</span> <span class="n">indices</span><span class="o">:</span> <span class="n">Vec</span><span class="o">::&lt;</span><span class="kt">u32</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Given an image of side <strong>N</strong> (where N is a power of 2) the terrain will extend from (0, 0) to (N, N) with a height ranging from 0.0 to 1.0</p>
+
+<h2>Build the Bevy mesh</h2>
+
+<p>Let&rsquo;s go back to Bevy now. How can we visualize the triangles
+that we obtained?</p>
+
+<p><strong>It is very easy to create a new mesh</strong>: we choose the primitive topology (<em>i.e. do you want to draw points, triangles, or lines?</em>):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="kd">let</span> <span class="k">mut</span> <span class="n">mesh</span> <span class="o">=</span> <span class="k">if</span> <span class="n">enable_wireframe</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">Mesh</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">PrimitiveTopology</span><span class="o">::</span><span class="n">LineList</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">Mesh</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">PrimitiveTopology</span><span class="o">::</span><span class="n">TriangleList</span><span class="p">)</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We then create the vectors that will contain the mesh vertex attributes and indices:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="kd">let</span> <span class="k">mut</span> <span class="n">vertices</span> <span class="o">:</span> <span class="n">Vec</span><span class="o">::&lt;</span><span class="p">[</span><span class="kt">f32</span><span class="p">;</span> <span class="mi">3</span><span class="p">]</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+</span><span class='line'><span class="kd">let</span> <span class="k">mut</span> <span class="n">indices</span> <span class="o">:</span> <span class="n">Vec</span><span class="o">::&lt;</span><span class="kt">u32</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+</span><span class='line'><span class="kd">let</span> <span class="k">mut</span> <span class="n">colors</span>  <span class="o">:</span> <span class="n">Vec</span><span class="o">::&lt;</span><span class="p">[</span><span class="kt">f32</span><span class="p">;</span> <span class="mi">3</span><span class="p">]</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and we fill them starting from the <code>TerrainMeshData</code> obtained above.</p>
+
+<p><strong>Vertices positition and color:</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">for</span> <span class="n">vertex</span> <span class="k">in</span> <span class="o">&amp;</span><span class="n">terrain_mesh_data</span><span class="p">.</span><span class="n">vertices</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">vertices</span><span class="p">.</span><span class="n">push</span><span class="p">([</span><span class="n">vertex</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="n">vertex</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="n">vertex</span><span class="p">.</span><span class="n">z</span><span class="p">]);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">let</span> <span class="n">color</span> <span class="o">=</span> <span class="n">grad</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">vertex</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+</span><span class='line'>    <span class="kd">let</span> <span class="n">raw_float</span> <span class="o">:</span> <span class="n">Srgb</span><span class="o">::&lt;</span><span class="kt">f32</span><span class="o">&gt;</span> <span class="o">=</span>
+</span><span class='line'>        <span class="n">Srgb</span><span class="o">::&lt;</span><span class="kt">f32</span><span class="o">&gt;::</span><span class="n">from_linear</span><span class="p">(</span><span class="n">color</span><span class="p">.</span><span class="n">into</span><span class="p">());</span>
+</span><span class='line'>    <span class="n">colors</span><span class="p">.</span><span class="n">push</span><span class="p">(</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">raw_float</span><span class="p">.</span><span class="n">red</span><span class="p">,</span> <span class="n">raw_float</span><span class="p">.</span><span class="n">green</span><span class="p">,</span> <span class="n">raw_float</span><span class="p">.</span><span class="n">blue</span><span class="p">]);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The vertices will have a color proportional to the terrain height. The <a href="https://docs.rs/palette/0.5.0/palette/">palette</a> library is used for generating the color gradient.</p>
+
+<p><strong>Indices:</strong></p>
+
+<p>It is useful to show the terrain wireframe for debugging. So we will use different indices depending on whether we want to draw triangles or lines.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">if</span> <span class="n">enable_wireframe</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mf">0.</span><span class="p">.</span><span class="n">triangle_number</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// three line for each triangle, </span>
+</span><span class='line'>        <span class="c1">// we specify start index and end index of each line</span>
+</span><span class='line'>        <span class="c1">// (we are ignoring the duplicated lines ofc)</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">j</span> <span class="k">in</span> <span class="o">&amp;</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">indices</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">terrain_mesh_data</span><span class="p">.</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">3</span><span class="o">+</span><span class="n">j</span><span class="p">]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mf">0.</span><span class="p">.</span><span class="n">triangle_number</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// three vertex for each triangle</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">j</span> <span class="k">in</span> <span class="mf">0.</span><span class="p">.</span><span class="mi">3</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">indices</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">terrain_mesh_data</span><span class="p">.</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">3</span><span class="o">+</span><span class="n">j</span><span class="p">]);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can now add these vectors to the mesh:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="n">mesh</span><span class="p">.</span><span class="n">set_attribute</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">Mesh</span><span class="o">::</span><span class="n">ATTRIBUTE_POSITION</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">VertexAttributeValues</span><span class="o">::</span><span class="n">Float3</span><span class="p">(</span><span class="n">vertices</span><span class="p">));</span>
+</span><span class='line'><span class="n">mesh</span><span class="p">.</span><span class="n">set_attribute</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">TerrainMaterial</span><span class="o">::</span><span class="n">ATTRIBUTE_COLOR</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">VertexAttributeValues</span><span class="o">::</span><span class="n">Float3</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+</span><span class='line'><span class="p">);</span>
+</span><span class='line'><span class="n">mesh</span><span class="p">.</span><span class="n">set_indices</span><span class="p">(</span><span class="nb">Some</span><span class="p">(</span><span class="n">Indices</span><span class="o">::</span><span class="n">U32</span><span class="p">(</span><span class="n">indices</span><span class="p">)));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>the <code>set_attribute</code> function accepts an arbitrary string as the first argument. This string will later be referenced in the shader.</p>
+
+<p>Rust type system and Bevy perform all the type conversion for us, so we avoid mangling with byte arrays and pointer casts.</p>
+
+<p><strong>Our mesh is now ready</strong>.</p>
+
+<h2>Mesh material</h2>
+
+<p>Bevy <a href="https://docs.rs/bevy_pbr/0.4.0/bevy_pbr/prelude/struct.StandardMaterial.html">standard material</a> allows to use a texture, but it does not support vertex colors. In order to draw the terrain with color proportional to the height, our shader has to use the <code>TerrainMaterial::ATTRIBUTE_COLOR</code> mesh attribute.</p>
+
+<p>In order to do this, we will use the simple render pipeline and shaders from the <a href="https://github.com/bevyengine/bevy/blob/master/examples/shader/mesh_custom_attribute.rs">mesh_custom_attribute.rs</a> example.</p>
+
+<p>The <code>add_terrain_pipeline</code> function, called during setup, creates and returns a new pipeline:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="cp">#[derive(RenderResources, Default, TypeUuid)]</span>
+</span><span class='line'><span class="cp">#[uuid = </span><span class="s">&quot;0320b9b8-b3a3-4baa-8bfa-c94008177b17&quot;</span><span class="cp">]</span>
+</span><span class='line'><span class="k">pub</span> <span class="k">struct</span> <span class="n">TerrainMaterial</span> <span class="p">{</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">impl</span> <span class="n">TerrainMaterial</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">pub</span> <span class="kr">const</span> <span class="n">ATTRIBUTE_COLOR</span><span class="o">:</span> <span class="o">&amp;</span><span class="n">&#39;static</span> <span class="kt">str</span> <span class="o">=</span> <span class="s">&quot;Vertex_Color&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">pub</span> <span class="k">fn</span> <span class="n">add_terrain_pipeline</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">mut</span> <span class="n">pipelines</span><span class="o">:</span> <span class="n">ResMut</span><span class="o">&lt;</span><span class="n">Assets</span><span class="o">&lt;</span><span class="n">PipelineDescriptor</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="k">mut</span> <span class="n">shaders</span><span class="o">:</span> <span class="n">ResMut</span><span class="o">&lt;</span><span class="n">Assets</span><span class="o">&lt;</span><span class="n">Shader</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="k">mut</span> <span class="n">render_graph</span><span class="o">:</span> <span class="n">ResMut</span><span class="o">&lt;</span><span class="n">RenderGraph</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">PipelineDescriptor</span><span class="o">&gt;</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Create a new shader pipeline</span>
+</span><span class='line'>    <span class="kd">let</span> <span class="n">pipeline_handle</span> <span class="o">=</span> <span class="n">pipelines</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">PipelineDescriptor</span><span class="o">::</span><span class="n">default_config</span><span class="p">(</span><span class="n">ShaderStages</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">vertex</span><span class="o">:</span> <span class="n">shaders</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">Shader</span><span class="o">::</span><span class="n">from_glsl</span><span class="p">(</span><span class="n">ShaderStage</span><span class="o">::</span><span class="n">Vertex</span><span class="p">,</span> <span class="n">VERTEX_SHADER</span><span class="p">)),</span>
+</span><span class='line'>        <span class="n">fragment</span><span class="o">:</span> <span class="nb">Some</span><span class="p">(</span><span class="n">shaders</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">Shader</span><span class="o">::</span><span class="n">from_glsl</span><span class="p">(</span><span class="n">ShaderStage</span><span class="o">::</span><span class="n">Fragment</span><span class="p">,</span> <span class="n">FRAGMENT_SHADER</span><span class="p">))),</span>
+</span><span class='line'>    <span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Add an AssetRenderResourcesNode to our Render Graph. This will bind TerrainMaterial resources to our shader</span>
+</span><span class='line'>    <span class="n">render_graph</span><span class="p">.</span><span class="n">add_system_node</span><span class="p">(</span>
+</span><span class='line'>        <span class="s">&quot;terrain_material_node&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">AssetRenderResourcesNode</span><span class="o">::&lt;</span><span class="n">TerrainMaterial</span><span class="o">&gt;::</span><span class="n">new</span><span class="p">(</span><span class="k">true</span><span class="p">),</span>
+</span><span class='line'>    <span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Add a Render Graph edge connecting our new &quot;terrain_material_node&quot; node to the main pass node. This ensures &quot;terrain_material_node&quot; runs before the main pass</span>
+</span><span class='line'>    <span class="n">render_graph</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">add_node_edge</span><span class="p">(</span>
+</span><span class='line'>            <span class="s">&quot;terrain_material_node&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">base</span><span class="o">::</span><span class="n">node</span><span class="o">::</span><span class="n">MAIN_PASS</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">unwrap</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">pipeline_handle</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Make the mesh available for use</h2>
+
+<p><em>Note: concepts such as Assets, Handle and Resources are described in the <a href="https://bevyengine.org/news/introducing-bevy/">Bevy Introduction</a></em></p>
+
+<p>We will not add the mesh directly to an Entity. Instead, the mesh will be owned by the <code>Assets</code> asset manager.
+Once we move the mesh to the manager, we obtain a <code>Handle</code> in exchange:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="kd">let</span> <span class="n">terrain_shaded_mesh_handle</span> <span class="o">:</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Mesh</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">meshes</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">terrain_shaded_mesh</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This <code>Handle</code> is now a clonable reference to the mesh. It is quite useful because, for instance, we can add it to a Bevy <code>Resource</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="cp">#[derive(Default)]</span>
+</span><span class='line'><span class="k">pub</span> <span class="k">struct</span> <span class="n">TerrainMeshResource</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">pub</span> <span class="n">shaded</span><span class="o">:</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Mesh</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="k">pub</span> <span class="n">wireframe</span><span class="o">:</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Mesh</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So that we can reference later the mesh in any system. For instance, the following system allows us to switch between the shaded and wireframe mesh:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">pub</span> <span class="k">fn</span> <span class="n">switch_mesh_system</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">keyboard_input</span><span class="o">:</span> <span class="n">Res</span><span class="o">&lt;</span><span class="n">Input</span><span class="o">&lt;</span><span class="n">KeyCode</span><span class="o">&gt;&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="c1">// query for selecting the entity with the terrain mesh</span>
+</span><span class='line'>    <span class="k">mut</span> <span class="n">terrain_query</span><span class="o">:</span> <span class="n">Query</span><span class="o">&lt;</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="o">&amp;</span><span class="k">mut</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Mesh</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Terrain</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="c1">// resource for accessing the shaded and wireframe mesh handles</span>
+</span><span class='line'>    <span class="n">terrain_mesh_res</span><span class="o">:</span> <span class="n">Res</span><span class="o">&lt;</span><span class="n">TerrainMeshResource</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">commands</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">mut</span> <span class="n">Commands</span><span class="p">,</span>
+</span><span class='line'><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">let</span> <span class="n">new_mesh_handle</span> <span class="o">=</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">keyboard_input</span><span class="p">.</span><span class="n">just_pressed</span><span class="p">(</span><span class="n">KeyCode</span><span class="o">::</span><span class="n">N</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nb">Some</span><span class="p">(</span><span class="n">terrain_mesh_res</span><span class="p">.</span><span class="n">shaded</span><span class="p">.</span><span class="n">clone</span><span class="p">())</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="n">keyboard_input</span><span class="p">.</span><span class="n">just_pressed</span><span class="p">(</span><span class="n">KeyCode</span><span class="o">::</span><span class="n">M</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nb">Some</span><span class="p">(</span><span class="n">terrain_mesh_res</span><span class="p">.</span><span class="n">wireframe</span><span class="p">.</span><span class="n">clone</span><span class="p">())</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nb">Option</span><span class="o">::</span><span class="nb">None</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="n">new_mesh_handle</span><span class="p">.</span><span class="n">is_some</span><span class="p">())</span> <span class="p">{</span>
+</span><span class='line'>        <span class="kd">let</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">new_mesh_handle</span><span class="p">.</span><span class="n">unwrap</span><span class="p">();</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="k">mut</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">_terrain</span><span class="p">)</span> <span class="k">in</span> <span class="n">terrain_query</span><span class="p">.</span><span class="n">iter_mut</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">commands</span><span class="p">.</span><span class="n">remove_one</span><span class="o">::&lt;</span><span class="n">Handle</span><span class="o">&lt;</span><span class="n">Mesh</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="n">entity</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">commands</span><span class="p">.</span><span class="n">set_current_entity</span><span class="p">(</span><span class="n">entity</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">commands</span><span class="p">.</span><span class="n">with</span><span class="p">(</span><span class="n">handle</span><span class="p">.</span><span class="n">clone</span><span class="p">());</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Add the mesh to the scene</h2>
+
+<p>Finally, let&rsquo;s spawn an entity in the scene with the terrain mesh:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="n">commands</span>
+</span><span class='line'>    <span class="p">.</span><span class="nb">spawn</span><span class="p">(</span><span class="n">MeshBundle</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">mesh</span><span class="o">:</span> <span class="n">terrain_mesh_res</span><span class="p">.</span><span class="n">shaded</span><span class="p">.</span><span class="n">clone</span><span class="p">(),</span>
+</span><span class='line'>        <span class="n">render_pipelines</span><span class="o">:</span> <span class="n">RenderPipelines</span><span class="o">::</span><span class="n">from_pipelines</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">vec</span><span class="o">!</span><span class="p">[</span><span class="n">RenderPipeline</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">pipeline_handle</span><span class="p">,)]),</span>
+</span><span class='line'>        <span class="n">transform</span><span class="o">:</span> <span class="n">Transform</span><span class="o">::</span><span class="n">from_translation</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">Vec3</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+</span><span class='line'>        <span class="p">..</span><span class="nb">Default</span><span class="o">::</span><span class="n">default</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">with</span><span class="p">(</span><span class="n">Terrain</span><span class="p">{})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The terrain mesh will now be visible in the scene:</p>
+
+<div class="row" style="display: flex">
+  <div class="column" style="width: 50%; align-self: center">
+    <p align="center">
+        <img alt="img-name" src="/images/bevy_terrain4.png" width="300">
+    </p>
+  </div>
+  <div class="column"  style="width: 50%">
+    <p align="center">
+        <img alt="img-name" src="/images/bevy_terrain5.png" width="300">
+    </p>
+  </div>
+</div>
+
+
+<p></p>
+
+<p>Note that, beyond spawning the <code>MeshBundle</code>, we added a <code>Terrain</code> component. This empty struct actually does nothing at all! However, by adding it to our entity, it works as a tag for referencing this entity in a query. Check the previous definition of <code>switch_mesh_system</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">pub</span> <span class="k">fn</span> <span class="n">switch_mesh_system</span><span class="p">(</span>
+</span><span class='line'>    <span class="c1">//...</span>
+</span><span class='line'>    <span class="k">mut</span> <span class="n">terrain_query</span><span class="o">:</span> <span class="n">Query</span><span class="o">&lt;</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="o">&amp;</span><span class="k">mut</span> <span class="n">Handle</span><span class="o">&lt;</span><span class="n">Mesh</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Terrain</span><span class="p">)</span><span class="o">&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="c1">// ...</span>
+</span><span class='line'><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// ...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>terrain_query</code> will only look for entities that contain <strong>both a mesh and a terrain component</strong>.</p>
+
+<h1>Conclusion</h1>
+
+<p>After a few days spent playing with this really promising framework I can totally say that using Bevy it&rsquo;s a nice experience:</p>
+
+<ul>
+<li>There are enough examples for learning how to use its features</li>
+<li>The ECS system seems very powerful and composable. So far I was always under the impression that I could read and write every part of the application in a clean way, without incurring in borrow checker issues. I don&rsquo;t know if this will hold true in larger applications, but I am optimistic about it</li>
+<li>Many features are missing right now (e.g. there are just a couple of UI widgets) but the development is pretty active.</li>
+</ul>
+
+
+<p>In the next post, we will add support for generating random terrain. Until then, you can check the <a href="https://github.com/clynamen/bevy_terrain/tree/0.0.1">current source code here</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -175,6 +699,14 @@ Then, you <strong>yield</strong> a new <strong>GET</strong> request so that you 
 <p>Actual analysis will be performed in the next post. Prepare yourself for a <strong>heavily technical post full of pie charts and linear regressions</strong>.</p>
 
 <p>You can find the scraper code <a href="https://github.com/clynamen/car_purchase">here</a>.</p>
+
+<p><br/></p>
+
+<hr />
+
+<p><br/></p>
+
+<p>Update 2021-04-01: as usual, my interests shifted on other stuff, so I am not going to write the second part of this blog post :P</p>
 </div>
   
   
@@ -1867,6 +2399,10 @@ Cube side: 0.03</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2021/01/04/terrain_generation_bevy/">Terrain Generation in Bevy Engine - Part 1: Rendering</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2020/05/02/buy_a_car_with_data-pt1/">Buy a car with data - Part 1</a>
       </li>
     
@@ -1880,10 +2416,6 @@ Cube side: 0.03</p>
     
       <li class="post">
         <a href="/blog/2019/05/31/julia_opencv/">Julia and the current status of OpenCV bindings</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/02/04/carsim2d/">Experimente mit Rust - Carsim2d [DE]</a>
       </li>
     
   </ul>
@@ -1945,7 +2477,7 @@ Cube side: 0.03</p>
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2020 -  Vincenzo Giovanni Comito <br/>
+  Copyright &copy; 2021 -  Vincenzo Giovanni Comito <br/>
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a> + <a href="https://github.com/clynamen/wired_next">theme: wired_next, a mnml fork</a>.
 	  
   </span>
